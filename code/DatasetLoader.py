@@ -4,13 +4,67 @@ Concrete IO class for a specific dataset
 
 # Copyright (c) 2017 Jiawei Zhang <jwzhanggy@gmail.com>
 # License: TBD
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
+
+from torch.utils.data import Dataset
+# from ogb.nodeproppred import PygNodePropPredDataset
+# from ogb.nodeproppred.dataset_pyg import PygNodePropPredDataset
+# from dgl.sampling import random_walk
+# import dgl
 
 from code.base_class.dataset import dataset
+
 import torch
 import numpy as np
 import scipy.sparse as sp
 from numpy.linalg import inv
 import pickle
+# class Ogbn(Dataset):
+#     def __init__(self, dataset_name='ogbn-arxiv', split=None, num=None):
+#         super(Ogbn, self).__init__()
+#         self.dataset_name = dataset_name
+#         # self.ogbn_data = DglNodePropPredDataset(dataset_name, root='./data')
+#         # self.graph, self.label = self.ogbn_data[0]
+#         # self.length = self.graph.num_nodes()
+#         # self.nodes = np.arange(self.length)
+#         self.nodes = np.arange(num)
+#         self.length = num
+
+    
+#     def __getitem__(self, index):
+#         return self.nodes[index]
+    
+#     def __len__(self):
+#         return self.length
+
+# class OgbnDataset(Dataset):
+#     def __init__(self, dataset_name='ogbn-arxiv', split=None):
+#         super(OgbnDataset, self).__init__()
+#         self.dataset_name = dataset_name
+#         self.ogbn_data = DglNodePropPredDataset(dataset_name, root='./data')
+#         split_idx = self.ogbn_data.get_idx_split()
+#         self.graph, self.label = self.ogbn_data[0]
+#         self.length = self.graph.num_nodes()
+#         # self.graph = self.graph.add_self_loop()
+#         # self.graph = dgl.add_self_loop(self.graph)
+#         # self.graph = dgl.to_bidirected(self.graph)
+#         print("XXX")
+#         self.node_list, _ = random_walk(self.graph, np.arange(self.length), length=5)
+#         print("YYY")
+#         print(self.node_list.shape)
+    
+#     def __getitem__(self, index):
+#         # nodes, _ = random_walk(self.graph, index, length=5)
+#         nodes = np.squeeze(self.nodes_list[index])
+#         print(nodes)
+#         x, y = self.graph.ndata['feat'][nodes], self.label[nodes]
+
+#         return x, y
+
+#     def __len__(self):
+#         return self.length
 
 
 class DatasetLoader(dataset):

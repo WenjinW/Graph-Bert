@@ -7,6 +7,31 @@ Concrete SettingModule class for a specific experimental SettingModule
 
 from code.base_class.setting import setting
 
+class NewSettings(setting):
+    fold = None
+    
+    def load_run_save_evaluate(self):
+        
+        # load dataset
+        loaded_data = self.dataset
+
+        # run learning methods
+        self.method.data = loaded_data
+        print("123")
+        learned_result = self.method.run()
+        print("456")
+            
+        # save raw ResultModule
+        self.result.data = learned_result
+        self.result.save()
+
+        # evaluate learning results
+        if self.evaluate is not None:
+            self.evaluate.data = learned_result
+            self.evaluate.evaluate()
+
+        return None
+
 
 class Settings(setting):
     fold = None

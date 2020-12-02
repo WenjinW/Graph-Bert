@@ -6,7 +6,9 @@ Concrete Evaluate class for a specific evaluation metrics
 # License: TBD
 
 from code.base_class.evaluate import evaluate
+
 from sklearn.metrics import accuracy_score
+
 
 
 class EvaluateAcc(evaluate):
@@ -14,5 +16,5 @@ class EvaluateAcc(evaluate):
     
     def evaluate(self):
         
-        return accuracy_score(self.data['true_y'], self.data['pred_y'])
+        return accuracy_score(self.data['true_y'].cpu(), self.data['pred_y'].cpu())
         

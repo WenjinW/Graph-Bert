@@ -1,28 +1,22 @@
 import numpy as np
 import torch
+import faulthandler
+faulthandler.enable()
+from ogb.nodeproppred import DglNodePropPredDataset
 
-from code.MethodGraphBertNodeClassification import MethodGraphBertNodeClassification
-# 放到前面，不然冲突
-from code.DatasetLoader import DatasetLoader
+from code.DatasetLoader import DatasetLoader, OgbnDataset, Ogbn
 from code.MethodBertComp import GraphBertConfig
+from code.NodeReconstruct import MethodGraphBertNodeConstruct
+from code.MethodGraphBertGraphRecovery import MethodGraphBertGraphRecovery
 from code.ResultSaving import ResultSaving
-from code.Settings import Settings
-
-
+from code.Settings import Settings, NewSettings
 
 #---- 'cora' , 'citeseer', 'pubmed' ----
 
-dataset_name = 'cora'
+dataset_name = 'ogbn-arxiv'
 
 np.random.seed(1)
 torch.manual_seed(1)
-
-pretrain_type = 'both'
-pretrained_path = None
-if pretrain_type == 'both':
-    pretrained_path = './result/PreTrained_GraphBert/'+dataset_name+'/node_graph_reconstruct_model'
-elif pretrain_type == 'node':
-    pretrained_path = './result/PreTrained_GraphBert/'+dataset_name+'/node_reconstruct_model'
 
 #---- cora-small is for debuging only ----
 if dataset_name == 'cora-small':
@@ -41,24 +35,33 @@ elif dataset_name == 'pubmed':
     nclass = 3
     nfeature = 500
     ngraph = 19717
+elif dataset_name == 'ogbn-arxiv':
+    nclass = 40
+    nfeature = 128
+    ngraph = 1
 
 
-#---- Fine-Tuning Task 1: Graph Bert Node Classification (Cora, Citeseer, and Pubmed) ----
+
+#---- Pre-Training Task #1: Graph Bert Node Attribute Reconstruction (Cora, Citeseer, and Pubmed) ----
 if 1:
     #---- hyper-parameters ----
     if dataset_name == 'pubmed':
         lr = 0.001
         k = 30
-        max_epoch = 1000 # 500 ---- do an early stop when necessary ----
+        max_epoch = 200 # ---- do an early stop when necessary ----
     elif dataset_name == 'cora':
-        lr = 0.01
+        lr = 0.001
         k = 7
-        max_epoch = 150 # 150 ---- do an early stop when necessary ----
+        max_epoch = 200 # ---- do an early stop when necessary ----
     elif dataset_name == 'citeseer':
         k = 5
         lr = 0.001
-        max_epoch = 2000 #2000 # it takes a long epochs to get good results, sometimes can be more than 2000
-
+        max_epoch = 200 # it takes a long epochs to converge, probably more than 2000
+    elif dataset_name == 'ogbn-arxiv':
+        lr = 0.001
+        k = 5
+        max_epoch = 200
+    
     x_size = nfeature
     hidden_size = intermediate_size = 32
     num_attention_heads = 2
@@ -69,58 +72,64 @@ if 1:
     # --------------------------
 
     print('************ Start ************')
-    print('GrapBert, dataset: ' + dataset_name + ', residual: ' + residual_type + ', k: ' + str(k) + ', hidden dimension: ' + str(hidden_size) +', hidden layer: ' + str(num_hidden_layers) + ', attention head: ' + str(num_attention_heads))
+    print('GrapBert, dataset: ' + dataset_name + ', Pre-training, Node Attribute Reconstruction.')
     # ---- objection initialization setction ---------------
-    data_obj = DatasetLoader()
-    data_obj.dataset_source_folder_path = './data/' + dataset_name + '/'
-    data_obj.dataset_name = dataset_name
-    data_obj.k = k
-    data_obj.load_all_tag = True
-
+    # data_obj = DatasetLoader()
+    # data_obj.dataset_source_folder_path = './data/' + dataset_name + '/'
+    # data_obj.dataset_name = dataset_name
+    # data_obj.k = k
+    # data_obj.load_all_tag = True
+    print("AAA")
+    ogb_data = DglNodePropPredDataset(dataset_name, root='./data')
+    data_obj = Ogbn(num=ogb_data[0][0].num_nodes())
     bert_config = GraphBertConfig(residual_type = residual_type, k=k, x_size=nfeature, y_size=y_size, hidden_size=hidden_size, intermediate_size=intermediate_size, num_attention_heads=num_attention_heads, num_hidden_layers=num_hidden_layers)
-    
-    method_obj = MethodGraphBertNodeClassification(bert_config, pretrained_path)
-    #---- set to false to run faster ----
-    method_obj.spy_tag = True
+    print("BBB")
+    method_obj = MethodGraphBertNodeConstruct(bert_config)
+    print("CCC")
     method_obj.max_epoch = max_epoch
     method_obj.lr = lr
-    # method_obj.load_pretrained_path = './result/PreTrained_GraphBert/'+dataset_name+'/node_reconstruct_model'
+    method_obj.save_pretrained_path = './result/PreTrained_GraphBert/' + dataset_name + '/node_reconstruct_model/'
 
     result_obj = ResultSaving()
     result_obj.result_destination_folder_path = './result/GraphBert/'
-    result_obj.result_destination_file_name = dataset_name + '_' + str(num_hidden_layers)
+    result_obj.result_destination_file_name = dataset_name + '_' + str(k) + '_node_reconstruction'
 
-    setting_obj = Settings()
+    setting_obj = NewSettings()
 
     evaluate_obj = None
     # ------------------------------------------------------
 
     # ---- running section ---------------------------------
     setting_obj.prepare(data_obj, method_obj, result_obj, evaluate_obj)
+    print("DDD")
     setting_obj.load_run_save_evaluate()
+    print("EEE")
     # ------------------------------------------------------
-
-
-    method_obj.save_pretrained('./result/PreTrained_GraphBert/' + dataset_name + '/node_classification_complete_model/')
+    # method_obj.save_pretrained('./result/PreTrained_GraphBert/' + dataset_name + '/node_reconstruct_model/')
+    
     print('************ Finish ************')
 #------------------------------------
 
 
-#---- Fine-Tuning Task 2: Graph Bert Graph Clustering (Cora, Citeseer, and Pubmed) ----
-if 0:
+#---- Pre-Training Task #2: Graph Bert Network Structure Recovery (Cora, Citeseer, and Pubmed) ----
+if 1:
     #---- hyper-parameters ----
     if dataset_name == 'pubmed':
         lr = 0.001
         k = 30
-        max_epoch = 500 # 500 ---- do an early stop when necessary ----
+        max_epoch = 200 # ---- do an early stop when necessary ----
     elif dataset_name == 'cora':
-        lr = 0.01
+        lr = 0.001
         k = 7
-        max_epoch = 150 #150 # ---- do an early stop when necessary ----
+        max_epoch = 200 # ---- do an early stop when necessary ----
     elif dataset_name == 'citeseer':
         k = 5
         lr = 0.001
-        max_epoch = 2000 #2000 # it takes a long epochs to converge, probably more than 2000
+        max_epoch = 200 # it takes a long epochs to converge, probably more than 2000
+    else:
+        k=5
+        lr = 0.01
+        max_epoch = 200
 
     x_size = nfeature
     hidden_size = intermediate_size = 32
@@ -132,7 +141,7 @@ if 0:
     # --------------------------
 
     print('************ Start ************')
-    print('GrapBert, dataset: ' + dataset_name + ', residual: ' + residual_type + ', k: ' + str(k) + ', hidden dimension: ' + str(hidden_size) +', hidden layer: ' + str(num_hidden_layers) + ', attention head: ' + str(num_attention_heads))
+    print('GrapBert, dataset: ' + dataset_name + ', Pre-training, Graph Structure Recovery.')
     # ---- objection initialization setction ---------------
     data_obj = DatasetLoader()
     data_obj.dataset_source_folder_path = './data/' + dataset_name + '/'
@@ -140,17 +149,16 @@ if 0:
     data_obj.k = k
     data_obj.load_all_tag = True
 
+    pretrained_path = './result/PreTrained_GraphBert/' + dataset_name + '/node_reconstruct_model/'
     bert_config = GraphBertConfig(residual_type = residual_type, k=k, x_size=nfeature, y_size=y_size, hidden_size=hidden_size, intermediate_size=intermediate_size, num_attention_heads=num_attention_heads, num_hidden_layers=num_hidden_layers)
-    method_obj = MethodGraphBertGraphClustering(bert_config)
-    #---- set to false to run faster ----
-    method_obj.cluster_number = y_size
-    method_obj.spy_tag = True
+    method_obj = MethodGraphBertGraphRecovery(bert_config, pretrained_path)
     method_obj.max_epoch = max_epoch
     method_obj.lr = lr
+    method_obj.save_pretrained_path = './result/PreTrained_GraphBert/' + dataset_name + '/node_graph_reconstruct_model/'
 
     result_obj = ResultSaving()
-    result_obj.result_destination_folder_path = './result/GraphBert/clustering_' + dataset_name
-    result_obj.result_destination_file_name = '_' + ''
+    result_obj.result_destination_folder_path = './result/GraphBert/'
+    result_obj.result_destination_file_name = dataset_name + '_' + str(k) + '_graph_recovery'
 
     setting_obj = Settings()
 
@@ -164,3 +172,4 @@ if 0:
 
     print('************ Finish ************')
 #------------------------------------
+

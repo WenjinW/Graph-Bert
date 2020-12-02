@@ -32,11 +32,15 @@ elif dataset_name == 'pubmed':
     nclass = 3
     nfeature = 500
     ngraph = 19717
+elif dataset_name == 'ogbn-arxiv':
+    nclass = 40
+    nfeature = 128
+    ngraph = 1
 
 
 
 #---- Pre-Training Task #1: Graph Bert Node Attribute Reconstruction (Cora, Citeseer, and Pubmed) ----
-if 0:
+if 1:
     #---- hyper-parameters ----
     if dataset_name == 'pubmed':
         lr = 0.001
@@ -68,11 +72,13 @@ if 0:
     data_obj.dataset_name = dataset_name
     data_obj.k = k
     data_obj.load_all_tag = True
+    
 
     bert_config = GraphBertConfig(residual_type = residual_type, k=k, x_size=nfeature, y_size=y_size, hidden_size=hidden_size, intermediate_size=intermediate_size, num_attention_heads=num_attention_heads, num_hidden_layers=num_hidden_layers)
     method_obj = MethodGraphBertNodeConstruct(bert_config)
     method_obj.max_epoch = max_epoch
     method_obj.lr = lr
+    method_obj.save_pretrained_path = './result/PreTrained_GraphBert/' + dataset_name + '/node_reconstruct_model/'
 
     result_obj = ResultSaving()
     result_obj.result_destination_folder_path = './result/GraphBert/'
@@ -87,18 +93,14 @@ if 0:
     setting_obj.prepare(data_obj, method_obj, result_obj, evaluate_obj)
     setting_obj.load_run_save_evaluate()
     # ------------------------------------------------------
-
+    # method_obj.save_pretrained('./result/PreTrained_GraphBert/' + dataset_name + '/node_reconstruct_model/')
+    
     print('************ Finish ************')
 #------------------------------------
 
 
-
-
-
-
-
 #---- Pre-Training Task #2: Graph Bert Network Structure Recovery (Cora, Citeseer, and Pubmed) ----
-if 0:
+if 1:
     #---- hyper-parameters ----
     if dataset_name == 'pubmed':
         lr = 0.001
@@ -135,10 +137,12 @@ if 0:
     data_obj.k = k
     data_obj.load_all_tag = True
 
+    pretrained_path = './result/PreTrained_GraphBert/' + dataset_name + '/node_reconstruct_model/'
     bert_config = GraphBertConfig(residual_type = residual_type, k=k, x_size=nfeature, y_size=y_size, hidden_size=hidden_size, intermediate_size=intermediate_size, num_attention_heads=num_attention_heads, num_hidden_layers=num_hidden_layers)
-    method_obj = MethodGraphBertGraphRecovery(bert_config)
+    method_obj = MethodGraphBertGraphRecovery(bert_config, pretrained_path)
     method_obj.max_epoch = max_epoch
     method_obj.lr = lr
+    method_obj.save_pretrained_path = './result/PreTrained_GraphBert/' + dataset_name + '/node_graph_reconstruct_model/'
 
     result_obj = ResultSaving()
     result_obj.result_destination_folder_path = './result/GraphBert/'

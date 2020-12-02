@@ -19,12 +19,13 @@ class MethodGraphBertNodeConstruct(BertPreTrainedModel):
 
     def __init__(self, config):
         super(MethodGraphBertNodeConstruct, self).__init__(config)
+        self.device = torch.device('cuda:0')
         self.config = config
-        self.bert = MethodGraphBert(config)
-        self.cls_y = torch.nn.Linear(config.hidden_size, config.x_size)
+        self.bert = MethodGraphBert(config).to(self.device)
+        self.cls_y = torch.nn.Linear(config.hidden_size, config.x_size).to(self.device)
         self.init_weights()
 
-    def forward(self, raw_features, wl_role_ids, init_pos_ids, hop_dis_ids, idx=None):
+    def forward(self, raw_features, wl_role_ids=None, init_pos_ids=None, hop_dis_ids=None, idx=None):
 
         outputs = self.bert(raw_features, wl_role_ids, init_pos_ids, hop_dis_ids)
 
@@ -37,10 +38,14 @@ class MethodGraphBertNodeConstruct(BertPreTrainedModel):
 
         return x_hat
 
-
     def train_model(self, max_epoch):
         t_begin = time.time()
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        
+        for name in ['raw_embeddings', 'wl_embedding','int_embeddings','hop_embeddings', 'X']:
+            self.data[name] = self.data[name].to(self.device)
+        # best_model = None
+        # best_loss = 1e9
         for epoch in range(max_epoch):
             t_epoch_begin = time.time()
 
@@ -63,6 +68,9 @@ class MethodGraphBertNodeConstruct(BertPreTrainedModel):
                 print('Epoch: {:04d}'.format(epoch + 1),
                       'loss_train: {:.4f}'.format(loss_train.item()),
                       'time: {:.4f}s'.format(time.time() - t_epoch_begin))
+            # if loss_train < best_loss:
+            #     best_loss = loss_train
+            #     best_model = 
 
         print("Optimization Finished!")
         print("Total time elapsed: {:.4f}s".format(time.time() - t_begin))
@@ -71,5 +79,7 @@ class MethodGraphBertNodeConstruct(BertPreTrainedModel):
     def run(self):
 
         self.train_model(self.max_epoch)
+        self.bert.save_pretrained(self.save_pretrained_path)
+        print("Save pretrained model in {}".format(self.save_pretrained_path))
 
         return self.learning_record_dict

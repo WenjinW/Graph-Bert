@@ -16,10 +16,14 @@ class MethodGraphBertGraphRecovery(BertPreTrainedModel):
     load_pretrained_path = ''
     save_pretrained_path = ''
 
-    def __init__(self, config):
+    def __init__(self, config, pretrained_path):
         super(MethodGraphBertGraphRecovery, self).__init__(config)
+        self.device = torch.device('cuda:0')
         self.config = config
-        self.bert = MethodGraphBert(config)
+        self.bert = MethodGraphBert(config).to(self.device)
+        if pretrained_path is not None:
+            print("Load pretraiend model from {}".format(pretrained_path))
+            self.bert.from_pretrained(pretrained_path).to(self.device)
         self.init_weights()
 
     def forward(self, raw_features, wl_role_ids, init_pos_ids, hop_dis_ids, idx=None):
@@ -42,6 +46,9 @@ class MethodGraphBertGraphRecovery(BertPreTrainedModel):
     def train_model(self, max_epoch):
         t_begin = time.time()
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        for name in ['raw_embeddings', 'wl_embedding','int_embeddings','hop_embeddings', 'A']:
+            self.data[name] = self.data[name].to(self.device)
+        
         for epoch in range(max_epoch):
             t_epoch_begin = time.time()
 
@@ -72,5 +79,7 @@ class MethodGraphBertGraphRecovery(BertPreTrainedModel):
     def run(self):
 
         self.train_model(self.max_epoch)
+        self.bert.save_pretrained(self.save_pretrained_path)
+        print("Save pretrained model in {}".format(self.save_pretrained_path))
 
         return self.learning_record_dict

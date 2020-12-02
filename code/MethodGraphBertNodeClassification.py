@@ -1,3 +1,5 @@
+from code.EvaluateAcc import EvaluateAcc
+
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
@@ -8,7 +10,7 @@ from code.MethodGraphBert import MethodGraphBert
 import time
 import numpy as np
 
-from code.EvaluateAcc import EvaluateAcc
+
 
 
 BertLayerNorm = torch.nn.LayerNorm
@@ -23,13 +25,17 @@ class MethodGraphBertNodeClassification(BertPreTrainedModel):
     load_pretrained_path = ''
     save_pretrained_path = ''
 
-    def __init__(self, config):
+    def __init__(self, config, pretrained_path):
         super(MethodGraphBertNodeClassification, self).__init__(config)
+        self.device = torch.device('cuda:0')
         self.config = config
-        self.bert = MethodGraphBert(config)
-        self.res_h = torch.nn.Linear(config.x_size, config.hidden_size)
-        self.res_y = torch.nn.Linear(config.x_size, config.y_size)
-        self.cls_y = torch.nn.Linear(config.hidden_size, config.y_size)
+        self.bert = MethodGraphBert(config).to(self.device)
+        if pretrained_path is not None:
+            print("Load pretrained model from {}".format(pretrained_path))
+            self.bert.from_pretrained(pretrained_path).to(self.device)
+        self.res_h = torch.nn.Linear(config.x_size, config.hidden_size).to(self.device)
+        self.res_y = torch.nn.Linear(config.x_size, config.y_size).to(self.device)
+        self.cls_y = torch.nn.Linear(config.hidden_size, config.y_size).to(self.device)
         self.init_weights()
 
     def forward(self, raw_features, wl_role_ids, init_pos_ids, hop_dis_ids, idx=None):
@@ -71,6 +77,8 @@ class MethodGraphBertNodeClassification(BertPreTrainedModel):
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         accuracy = EvaluateAcc('', '')
 
+        for name in ['raw_embeddings', 'wl_embedding', 'int_embeddings', 'hop_embeddings', 'idx_train', 'y', 'X', 'A']:
+            self.data[name] = self.data[name].to(self.device)
         max_score = 0.0
         for epoch in range(max_epoch):
             t_epoch_begin = time.time()

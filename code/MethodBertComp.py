@@ -107,11 +107,12 @@ class BertEmbeddings(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, raw_features=None, wl_role_ids=None, init_pos_ids=None, hop_dis_ids=None):
-
-        raw_feature_embeds = self.raw_feature_embeddings(raw_features)
-        role_embeddings = self.wl_role_embeddings(wl_role_ids)
-        position_embeddings = self.inti_pos_embeddings(init_pos_ids)
-        hop_embeddings = self.hop_dis_embeddings(hop_dis_ids)
+        
+        # modify: if None, set zero
+        raw_feature_embeds = self.raw_feature_embeddings(raw_features) if raw_features is not None else 0.0
+        role_embeddings = self.wl_role_embeddings(wl_role_ids) if wl_role_ids is not None else 0.0
+        position_embeddings = self.inti_pos_embeddings(init_pos_ids) if init_pos_ids is not None else 0.0
+        hop_embeddings = self.hop_dis_embeddings(hop_dis_ids) if hop_dis_ids is not None else 0.0
 
         #---- here, we use summation ----
         embeddings = raw_feature_embeds + role_embeddings + position_embeddings + hop_embeddings
