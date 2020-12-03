@@ -9,10 +9,6 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 
 from torch.utils.data import Dataset
-# from ogb.nodeproppred import PygNodePropPredDataset
-# from ogb.nodeproppred.dataset_pyg import PygNodePropPredDataset
-# from dgl.sampling import random_walk
-# import dgl
 
 from code.base_class.dataset import dataset
 
@@ -21,23 +17,23 @@ import numpy as np
 import scipy.sparse as sp
 from numpy.linalg import inv
 import pickle
-# class Ogbn(Dataset):
-#     def __init__(self, dataset_name='ogbn-arxiv', split=None, num=None):
-#         super(Ogbn, self).__init__()
-#         self.dataset_name = dataset_name
-#         # self.ogbn_data = DglNodePropPredDataset(dataset_name, root='./data')
-#         # self.graph, self.label = self.ogbn_data[0]
-#         # self.length = self.graph.num_nodes()
-#         # self.nodes = np.arange(self.length)
-#         self.nodes = np.arange(num)
-#         self.length = num
+class Ogbn(Dataset):
+    def __init__(self, dataset_name='ogbn-arxiv', split=None, num=None):
+        super(Ogbn, self).__init__()
+        self.dataset_name = dataset_name
+        # self.ogbn_data = DglNodePropPredDataset(dataset_name, root='./data')
+        # self.graph, self.label = self.ogbn_data[0]
+        # self.length = self.graph.num_nodes()
+        # self.nodes = np.arange(self.length)
+        self.nodes = np.arange(num)
+        self.length = num
 
     
-#     def __getitem__(self, index):
-#         return self.nodes[index]
+    def __getitem__(self, index):
+        return self.nodes[index]
     
-#     def __len__(self):
-#         return self.length
+    def __len__(self):
+        return self.length
 
 # class OgbnDataset(Dataset):
 #     def __init__(self, dataset_name='ogbn-arxiv', split=None):

@@ -6,7 +6,7 @@ Concrete MethodModule class for a specific learning MethodModule
 # License: TBD
 
 import torch
-from transformers.modeling_bert import BertPreTrainedModel, BertPooler
+from transformers.models.bert.modeling_bert import BertPreTrainedModel, BertPooler
 from code.MethodBertComp import BertEmbeddings, BertEncoder
 
 
@@ -111,7 +111,7 @@ class MethodGraphBert(BertPreTrainedModel):
         return token_type_ids, extended_attention_mask, encoder_extended_attention_mask, head_mask
 
 
-    def forward(self, raw_features, wl_role_ids, init_pos_ids, hop_dis_ids, head_mask=None, residual_h=None):
+    def forward(self, raw_features, wl_role_ids=None, init_pos_ids=None, hop_dis_ids=None, head_mask=None, residual_h=None):
         if head_mask is None:
             head_mask = [None] * self.config.num_hidden_layers
 

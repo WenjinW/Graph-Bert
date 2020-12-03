@@ -1,7 +1,7 @@
 import torch
 import torch.optim as optim
 
-from transformers.modeling_bert import BertPreTrainedModel
+from transformers.models.bert.modeling_bert import BertPreTrainedModel
 from code.MethodGraphBert import MethodGraphBert
 
 import time
@@ -18,12 +18,12 @@ class MethodGraphBertGraphRecovery(BertPreTrainedModel):
 
     def __init__(self, config, pretrained_path):
         super(MethodGraphBertGraphRecovery, self).__init__(config)
-        self.device = torch.device('cuda:0')
+        self.place = torch.device('cuda:0')
         self.config = config
-        self.bert = MethodGraphBert(config).to(self.device)
+        self.bert = MethodGraphBert(config).to(self.place)
         if pretrained_path is not None:
             print("Load pretraiend model from {}".format(pretrained_path))
-            self.bert.from_pretrained(pretrained_path).to(self.device)
+            self.bert.from_pretrained(pretrained_path).to(self.place)
         self.init_weights()
 
     def forward(self, raw_features, wl_role_ids, init_pos_ids, hop_dis_ids, idx=None):
@@ -47,7 +47,7 @@ class MethodGraphBertGraphRecovery(BertPreTrainedModel):
         t_begin = time.time()
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         for name in ['raw_embeddings', 'wl_embedding','int_embeddings','hop_embeddings', 'A']:
-            self.data[name] = self.data[name].to(self.device)
+            self.data[name] = self.data[name].to(self.place)
         
         for epoch in range(max_epoch):
             t_epoch_begin = time.time()

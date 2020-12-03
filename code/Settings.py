@@ -17,9 +17,7 @@ class NewSettings(setting):
 
         # run learning methods
         self.method.data = loaded_data
-        print("123")
         learned_result = self.method.run()
-        print("456")
             
         # save raw ResultModule
         self.result.data = learned_result

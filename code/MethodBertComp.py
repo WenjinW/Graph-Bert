@@ -8,7 +8,7 @@ Concrete MethodModule class for a specific learning MethodModule
 import math
 import torch
 import torch.nn as nn
-from transformers.modeling_bert import BertPredictionHeadTransform, BertAttention, BertIntermediate, BertOutput
+from transformers.models.bert.modeling_bert import BertPredictionHeadTransform, BertAttention, BertIntermediate, BertOutput
 from transformers.configuration_utils import PretrainedConfig
 
 BertLayerNorm = torch.nn.LayerNorm
