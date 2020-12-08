@@ -48,16 +48,10 @@ class MethodGraphBertNodeConstruct(BertPreTrainedModel):
         # best_loss = 1e9
         for epoch in range(max_epoch):
             t_epoch_begin = time.time()
-
-            # -------------------------
-
             self.train()
             optimizer.zero_grad()
-
             output = self.forward(self.data['raw_embeddings'], self.data['wl_embedding'], self.data['int_embeddings'], self.data['hop_embeddings'])
-
             loss_train = F.mse_loss(output, self.data['X'])
-
             loss_train.backward()
             optimizer.step()
 

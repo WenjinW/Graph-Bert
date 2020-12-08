@@ -14,19 +14,32 @@ class MethodWLNodeColoring(method):
     node_color_dict = {}
     node_neighbor_dict = {}
 
-    def setting_init(self, node_list, link_list):
+    def __init__(self, node_list, edge_list):
+        self.node_color_dict = {}
+        self.node_neighbor_dict = {}
+
+        # convert the Tensor to list
+        node_list = node_list.tolist()
+        edge_list_1, edge_list_2 = edge_list[0].tolist(), edge_list[1].tolist()
+        
         for node in node_list:
             self.node_color_dict[node] = 1
             self.node_neighbor_dict[node] = {}
-
-        for pair in link_list:
-            u1, u2 = pair
+        
+        for index in range(len(edge_list_1)):
+            u1, u2 = edge_list_1[index], edge_list_2[index]
             if u1 not in self.node_neighbor_dict:
                 self.node_neighbor_dict[u1] = {}
             if u2 not in self.node_neighbor_dict:
                 self.node_neighbor_dict[u2] = {}
             self.node_neighbor_dict[u1][u2] = 1
             self.node_neighbor_dict[u2][u1] = 1
+        
+        self.WL_recursion(node_list)
+    
+    def get_WL(self):
+        
+        return self.node_color_dict
 
     def WL_recursion(self, node_list):
         iteration_count = 1
@@ -48,11 +61,3 @@ class MethodWLNodeColoring(method):
             else:
                 self.node_color_dict = new_color_dict
             iteration_count += 1
-
-
-    def run(self):
-        node_list = self.data['idx']
-        link_list = self.data['edges']
-        self.setting_init(node_list, link_list)
-        self.WL_recursion(node_list)
-        return self.node_color_dict

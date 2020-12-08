@@ -7,61 +7,79 @@ Concrete IO class for a specific dataset
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
-
+from ogb.nodeproppred import DglNodePropPredDataset
 from torch.utils.data import Dataset
 
 from code.base_class.dataset import dataset
+from code.WL import MethodWLNodeColoring
 
+import dgl
+import os
+import time
 import torch
 import numpy as np
 import scipy.sparse as sp
 from numpy.linalg import inv
 import pickle
-class Ogbn(Dataset):
-    def __init__(self, dataset_name='ogbn-arxiv', split=None, num=None):
-        super(Ogbn, self).__init__()
-        self.dataset_name = dataset_name
-        # self.ogbn_data = DglNodePropPredDataset(dataset_name, root='./data')
-        # self.graph, self.label = self.ogbn_data[0]
-        # self.length = self.graph.num_nodes()
-        # self.nodes = np.arange(self.length)
-        self.nodes = np.arange(num)
-        self.length = num
 
-    
+class Ogbn(Dataset):
+    def __init__(self, dataset_name='ogbn-arxiv', k=5):
+        super(Ogbn, self).__init__()
+        print("Loading dataset {}".format(dataset_name))
+        self.dataset_name = dataset_name
+        self.dataset_path = os.path.join('./data', dataset_name.replace('-', '_'))
+        ogbn_dataset = DglNodePropPredDataset(dataset_name, root='./data')
+        self.graph, self.label = ogbn_dataset[0]
+        self.graph = self.graph.add_self_loop()
+        self.label = self.label.flatten()
+
+        self.split = ogbn_dataset.get_idx_split()
+
+        self.length = self.graph.num_nodes()
+        self.nodes = self.graph.nodes()
+        self.edges = self.graph.edges()
+        self.k = k
+        print("Generate Context...")
+        time1 = time.time()
+        self.context = np.squeeze(dgl.sampling.random_walk(self.graph, self.nodes, length=self.k)[0])
+        time2 = time.time()
+        print("Context shape: {}, time: {}s".format(self.context.shape, time2-time1))
+        print("Loading WL...")
+        self.path_WL = os.path.join(self.dataset_path, 'WL.pkl')
+        self.WL = self.load_WL(self.path_WL)
+        max_wl = 0
+        for i in self.WL.values():
+            max_wl = i if i > max_wl else max_wl
+        print("Max WL id: ", max_wl)
+
+
     def __getitem__(self, index):
-        return self.nodes[index]
+        node_feat = self.graph.ndata['feat'][index]
+        node_context_feat = self.graph.ndata['feat'][self.context[index]]
+        node_wl_id = torch.tensor([self.WL[i.item()] for i in self.context[index]])
+        node_label = self.label[index]
+
+        return node_feat, node_context_feat, node_wl_id, node_label
     
     def __len__(self):
         return self.length
 
-# class OgbnDataset(Dataset):
-#     def __init__(self, dataset_name='ogbn-arxiv', split=None):
-#         super(OgbnDataset, self).__init__()
-#         self.dataset_name = dataset_name
-#         self.ogbn_data = DglNodePropPredDataset(dataset_name, root='./data')
-#         split_idx = self.ogbn_data.get_idx_split()
-#         self.graph, self.label = self.ogbn_data[0]
-#         self.length = self.graph.num_nodes()
-#         # self.graph = self.graph.add_self_loop()
-#         # self.graph = dgl.add_self_loop(self.graph)
-#         # self.graph = dgl.to_bidirected(self.graph)
-#         print("XXX")
-#         self.node_list, _ = random_walk(self.graph, np.arange(self.length), length=5)
-#         print("YYY")
-#         print(self.node_list.shape)
-    
-#     def __getitem__(self, index):
-#         # nodes, _ = random_walk(self.graph, index, length=5)
-#         nodes = np.squeeze(self.nodes_list[index])
-#         print(nodes)
-#         x, y = self.graph.ndata['feat'][nodes], self.label[nodes]
-
-#         return x, y
-
-#     def __len__(self):
-#         return self.length
-
+    def load_WL(self, file_path):
+        if os.path.exists(file_path):
+            with open(file_path, 'rb') as f:
+                WL = pickle.load(f)
+            print("Load WL from {}".format(file_path))
+        else:
+            print("{} doesn't exist! Preprocessing to generate WL.".format(file_path))
+            time1 = time.time()
+            WL = MethodWLNodeColoring(self.nodes, self.edges).get_WL()
+            time2 = time.time()
+            print("WL type:", type(WL))
+            with open(file_path, 'wb') as f:
+                pickle.dump(WL, f)
+            print("Time for WL: {}s, Save WL in {}".format(time2-time1, file_path))
+        
+        return WL
 
 class DatasetLoader(dataset):
     c = 0.15

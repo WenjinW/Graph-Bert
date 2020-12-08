@@ -11,8 +11,6 @@ import time
 import numpy as np
 
 
-
-
 BertLayerNorm = torch.nn.LayerNorm
 
 class MethodGraphBertNodeClassification(BertPreTrainedModel):
@@ -82,9 +80,6 @@ class MethodGraphBertNodeClassification(BertPreTrainedModel):
         max_score = 0.0
         for epoch in range(max_epoch):
             t_epoch_begin = time.time()
-
-            # -------------------------
-
             self.train()
             optimizer.zero_grad()
 

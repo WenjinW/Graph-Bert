@@ -21,7 +21,7 @@ class GraphBertConfig(PretrainedConfig):
         x_size=3000,
         y_size=7,
         k=5,
-        max_wl_role_index = 100,
+        max_wl_role_index = 600,
         max_hop_dis_index = 100,
         max_inti_pos_index = 100,
         hidden_size=32,
